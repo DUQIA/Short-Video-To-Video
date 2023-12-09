@@ -10,5 +10,6 @@
 </div>
 
 **The two slowest steps in the current process:**
+-  The currently referenced space is up to one hour. [![huggingface](https://img.shields.io/badge/%F0%9F%A4%97-Open%20in%20Spacce-grue)](https://huggingface.co/spaces/hf-audio/whisper-large-v3)
 - Video being recognized as DTS.
 - Sending to Whisper.

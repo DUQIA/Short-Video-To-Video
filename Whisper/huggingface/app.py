@@ -59,7 +59,7 @@ with gr.Blocks() as demo:
                 inputs="audio", 
                 outputs="text", 
                 title="Whisper Large V3: Short Audio Timestamp Transcribe", 
-                description="🤗 [whisper-large-v3](https://huggingface.co/spaces/hf-audio/whisper-large-v3), Limited the audio length to 20 seconds."
+                description="🤗 [whisper-large-v3](https://huggingface.co/spaces/hf-audio/whisper-large-v3), Limited the audio length to 20 seconds. Currently only supports google Translator. Please check [here](https://github.com/DUQIA/Short-Video-To-Video) for details."
             )
 
 demo.launch()

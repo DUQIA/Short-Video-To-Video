@@ -1,6 +1,0 @@
-torch
-optimum
-datasets[audio]
-accelerate
-torchaudio
-transformers

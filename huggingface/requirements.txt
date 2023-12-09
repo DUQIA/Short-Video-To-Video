@@ -1,3 +1,0 @@
-spleeter
-edge-tts
-translators

@@ -13,7 +13,6 @@ language = translate[tr]
 la = list(language.keys())[0]
 speaker = speakers
 sp = speaker[0]
-gl = True
 
 file_name = 'audio'
 main_video = 'video.mp4'
@@ -47,6 +46,7 @@ def translator(text, TR_LANGUAGE, LANGUAGE):
   return ts_text
 
 def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
+  gl = True
   language = translate[TR_LANGUAGE]
 
   if video is None:

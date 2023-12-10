@@ -8,8 +8,12 @@ from gradio_client import Client
 from list_dict import translates, speakers
 
 translate = translates
-language = translate[list(translate.keys())[9]]
+tr = list(translate.keys())[9]
+language = translate[tr]
+la = list(language.keys())[0]
 speaker = speakers
+sp = speaker[0]
+gl = True
 
 file_name = 'audio'
 main_video = 'video.mp4'
@@ -49,7 +53,11 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
       raise gr.Error('No audio file submitted!')
   elif language is None:
       raise gr.Error('Please select google translator!')
-  elif TR_LANGUAGE != 'google':
+  elif TR_LANGUAGE != tr:
+      gl = False
+      raise gr.Error('Language has been reloaded, please select again!')
+  elif gl is False:
+      gl = True
       raise gr.Error('Language has been reloaded, please select again!')
   elif float(gain_time(video)) > 60:
       raise gr.Error('Exceed maximum limit!')
@@ -120,9 +128,9 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
   return output_video
 
 with gr.Blocks() as demo:
-  TR_LANGUAGE = gr.Dropdown(translate, value=list(translate.keys())[9], label='Translator')
-  LANGUAGE = gr.Dropdown(language, value=list(language.keys())[0], label='Language')
-  SPEAKER = gr.Dropdown(speaker, value=speaker[0], label='Speaker')
+  TR_LANGUAGE = gr.Dropdown(translate, value=tr, label='Translator')
+  LANGUAGE = gr.Dropdown(language, value=la, label='Language')
+  SPEAKER = gr.Dropdown(speaker, value=sp, label='Speaker')
   gr.Interface(
       fn=video_inputs,
       inputs=[

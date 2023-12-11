@@ -62,16 +62,19 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
   elif float(gain_time(video)) > 60:
       raise gr.Error('Exceed maximum limit!')
 
-  ff = ffmpy.FFmpeg(
-      inputs={
-          video: None
-          },
-      outputs={
-          main_video: ['-y', '-map', '0:0', '-c:a', 'copy', '-f', 'mp4'],
-          main_audio: ['-y', '-map', '0:a', '-vn', '-acodec', 'pcm_s16le', '-ar', '16000', '-ac', '1', '-f', 'wav']
-          }
-      )
-  ff.run()
+  try:
+    ff = ffmpy.FFmpeg(
+        inputs={
+            video: None
+            },
+        outputs={
+            main_video: ['-y', '-map', '0:0', '-c:a', 'copy', '-f', 'mp4'],
+            main_audio: ['-y', '-map', '0:a', '-vn', '-acodec', 'pcm_s16le', '-ar', '16000', '-ac', '1', '-f', 'wav']
+            }
+        )
+    ff.run()
+  except ffmpy.FFRuntimeError:
+   raise gr.Error('Mismatched audio!')
 
   subprocess.run(['spleeter', 'separate', '-o', folder, '-p', 'spleeter:2stems-16kHz', main_audio])
 
@@ -80,7 +83,7 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
           vocals: None
           },
       outputs={
-          vocals_monorail: ['-y', '-i', vocals, '-vn', '-acodec', 'pcm_s16le', '-ar', '16000', '-ac', '1', '-f', 'wav']
+          vocals_monorail: ['-y', '-vn', '-acodec', 'pcm_s16le', '-ar', '16000', '-ac', '1', '-f', 'wav']
           }
       )
   ff.run()

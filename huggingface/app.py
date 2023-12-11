@@ -53,12 +53,16 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
       raise gr.Error('No audio file submitted!')
   elif language is None:
       raise gr.Error('Please select google translator!')
+  elif SPEAKER is None:
+      raise gr.Error('Please select a Speaker')
+  elif TR_LANGUAGE == tr:
+      if gl is False:
+          gl = True
+          raise gr.Error('Language has been reloaded, please select again!')
   elif TR_LANGUAGE != tr:
-      gl = False
-      raise gr.Error('Language has been reloaded, please select again!')
-  elif gl is False:
-      gl = True
-      raise gr.Error('Language has been reloaded, please select again!')
+      if gl is True:
+          gl = False
+          raise gr.Error('Language has been reloaded, please select again!')
   elif float(gain_time(video)) > 60:
       raise gr.Error('Exceed maximum limit!')
 

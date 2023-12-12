@@ -29,7 +29,7 @@
 - Video being recognized as DTS.
 - Sending to Whisper.
 
-# Use other translators:
+# 🌐Use other translators:
 - In the `translates` variable of [list_dict](huggingface/list_dict.py)，find the corresponding Translator, and change `None` to the `variate_name` in the .py file you created.
 - And add `from you_flie_name import variate_name` at the top of [list_dict](huggingface/list_dict.py).
 - Add the following code in [colab](https://colab.research.google.com/) and run it step by step.
@@ -37,7 +37,7 @@
 - `import translators as ts` import
 - `Language_list = ts.translate_text('text', translator='translators', from_language='auto', to_language=None)`Replace 'translators' with the key corresponding to the value you set in [list_dict](huggingface/list_dict.py), this will result in a `TranslatorError` exception, which contains a complete list of this translator, copy it.
 - Translate to English: Replace the empty `dict_values` list in the following code.
-- ⚠️Note, most codes are supported in the `url`.If you can’t find the code in the second line of the printout, you can try [ISO-639-2](https://support.isan.org/hc/en-us/articles/360012734159-List-of-ISO-639-2-Language-Codes), or ask GPT or Copilot.
+- ⚠️Note, most codes are supported in the `url`.If you can’t find the code in the second line of the printout, you can try [ISO-639-2](https://support.isan.org/hc/en-us/articles/360012734159-List-of-ISO-639-2-Language-Codes), or ask GPT or Copilot.🎉
 ```
 import bs4
 import requests

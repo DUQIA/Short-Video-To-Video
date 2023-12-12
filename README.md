@@ -30,7 +30,7 @@
 - Sending to Whisper.
 
 # 🌐Use other translators:
-- In the `translates` variable of [list_dict](huggingface/list_dict.py)，find the corresponding Translator, and change `None` to the `variate_name` in the .py file you created.
+- In the `translates` variable of [list_dict](huggingface/list_dict.py)，find the corresponding Translator, and change `None` to the `variate_name` in the `.py` file you created.
 - And add `from you_flie_name import variate_name` at the top of [list_dict](huggingface/list_dict.py).
 - Add the following code in [colab](https://colab.research.google.com/) and run it step by step.
 - `!pip install translators` install

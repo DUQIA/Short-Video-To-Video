@@ -150,6 +150,6 @@ with gr.Blocks() as demo:
           gr.Video(height=320, width=600, label='Output_video'),
       ],
       title="Short-Video-To-Video", 
-      description="🤗 [whisper-large-v3](https://huggingface.co/spaces/hf-audio/whisper-large-v3), Limited the video length to 60 seconds. Currently only supports google Translator. Please check [here](https://github.com/DUQIA/Short-Video-To-Video) for details."
+      description="🤗 [whisper-large-v3](https://huggingface.co/spaces/hf-audio/whisper-large-v3), Limited the video length to 60 秒之前. Currently only supports google Translator, Use other [translators](https://github.com/DUQIA/Short-Video-To-Video/blob/main/README.md#use-other-translators). Please check [here](https://github.com/DUQIA/Short-Video-To-Video) for details."
   )
 demo.launch()

@@ -1,3 +1,4 @@
+import re
 import ffmpy
 import asyncio
 import edge_tts
@@ -22,6 +23,7 @@ text_to_speech = 'text_to_speech.wav'
 vocals = f'./{folder}/{file_name}/vocals.wav'
 vocals_monorail = f'./{folder}/{file_name}/vocals_monorail.wav'
 accompaniment = f'./{folder}/{file_name}/accompaniment.wav'
+output_left_audio = 'output_left_audio.wav'
 output_rate_audio = 'output_rate_audio.wav'
 output_audio = 'output.wav'
 output_video = 'output.mp4'
@@ -31,14 +33,26 @@ def gain_time(audio):
   result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   return float(result.stdout)
 
+def left_justified(audio):
+  command = ['ffmpeg', '-i', audio, '-af', 'silencedetect=n=-38dB:d=0.01', '-f', 'null', '-']
+  result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+  return re.search(r'silence_duration: (\d.\d+)', result.stdout.decode(), re.M|re.S).group(1)
+  
 def time_verify():
   audios = [vocals_monorail, text_to_speech]
+  justified = []
   time_lists = []
 
   for audio in audios:
+    justified.append(left_justified(audio))
     time_lists.append(gain_time(audio))
 
-  r_time = float(max(time_lists)) / float(min(time_lists))
+  j_time = float(justified[0]) - float(justified[1])
+
+  if float(time_lists[0]) > float(time_lists[1]):
+      r_time = float(min(time_lists)) / (float(max(time_lists)) - j_time)
+  else:
+      r_time = float(max(time_lists)) / float(min(time_lists))
   return r_time
 
 def translator(text, TR_LANGUAGE, LANGUAGE):
@@ -54,7 +68,7 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
   elif language is None:
       raise gr.Error('Please select google translator!')
   elif SPEAKER is None:
-      raise gr.Error('Please select a Speaker')
+      raise gr.Error('Please select a Speaker！')
   elif TR_LANGUAGE == tr:
       if gl is False:
           gl = True
@@ -77,12 +91,10 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
             }
         )
     ff.run()
-  except ffmpy.FFRuntimeError:
-   raise gr.Error('Mismatched audio!')
 
-  subprocess.run(['spleeter', 'separate', '-o', folder, '-p', 'spleeter:2stems-16kHz', main_audio])
-
-  ff = ffmpy.FFmpeg(
+    subprocess.run(['spleeter', 'separate', '-o', folder, '-p', 'spleeter:2stems-16kHz', main_audio])
+    
+    ff = ffmpy.FFmpeg(
       inputs={
           vocals: None
           },
@@ -90,14 +102,18 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
           vocals_monorail: ['-y', '-vn', '-acodec', 'pcm_s16le', '-ar', '16000', '-ac', '1', '-f', 'wav']
           }
       )
-  ff.run()
-
-  client = Client('https://hf-audio-whisper-large-v3.hf.space/')
-  result = client.predict(
+    ff.run()
+    
+    client = Client('https://hf-audio-whisper-large-v3.hf.space/')
+    result = client.predict(
           vocals_monorail,	# str (filepath or URL to file) in 'inputs' Audio component
           'transcribe',	# str in 'Task' Radio component
           api_name='/predict'
-  )
+    )
+  except ffmpy.FFRuntimeError:
+   raise gr.Error('Mismatched audio!')
+  except client.RemoteDisconnected as e:
+    raise gr.Error(e)
 
   ts_text = translator(result, TR_LANGUAGE, LANGUAGE)
 
@@ -106,18 +122,40 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
     await communicate.save(text_to_speech)
   asyncio.run(amain())
 
-  rate_audio = time_verify()
+  j_time, r_time = time_verify()
   ff = ffmpy.FFmpeg(
-      inputs={text_to_speech: None},
+      inputs={
+          text_to_speech: None
+      },
       outputs={
-          output_rate_audio: ['-y', '-filter:a', f'atempo={rate_audio}']
+          output_rate_audio: ['-y', '-filter:a', f'atempo={r_time}']
       }
   )
   ff.run()
+  if j_time > 0:
+      ff = ffmpy.FFmpeg(
+          inputs={
+              output_rate_audio: None
+          },
+          outputs={
+              output_left_audio: ['-y', '-af', f'areverse,apad=pad_dur={j_time}s,areverse']
+          }
+      )
+      ff.run()
+  else:
+      ff = ffmpy.FFmpeg(
+          inputs={
+              output_rate_audio: None
+          },
+          outputs={
+              output_left_audio: ['-y',  '-filter:a', f'atrim=start={abs(j_time)}']
+          }
+      )
+      ff.run()
 
   ff = ffmpy.FFmpeg(
       inputs={
-          output_rate_audio: None,
+          output_left_audio: None,
           accompaniment: None
       },
       outputs={
@@ -132,7 +170,7 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
   )
   ff.run()
 
-  return output_video
+  return output_video, accompaniment, vocals_monorail, output_left_audio, text_to_speech, result, ts_text
 
 with gr.Blocks() as demo:
   TR_LANGUAGE = gr.Dropdown(translate, value=tr, label='Translator')
@@ -148,8 +186,14 @@ with gr.Blocks() as demo:
           ],
       outputs=[
           gr.Video(height=320, width=600, label='Output_video'),
+          gr.Audio(label='Accompaniment'),
+          gr.Audio(label='Vocals'),
+          gr.Audio(label='Vocals_justified'),
+          gr.Audio(label='Text_speech'),
+          gr.Text(label='Original'),
+          gr.Text(label='Translation'),
       ],
       title="Short-Video-To-Video", 
-      description="🤗 [whisper-large-v3](https://huggingface.co/spaces/hf-audio/whisper-large-v3), Limited the video length to 60 秒之前. Currently only supports google Translator, Use other [translators](https://github.com/DUQIA/Short-Video-To-Video/blob/main/README.md#use-other-translators). Please check [here](https://github.com/DUQIA/Short-Video-To-Video) for details."
+      description="🤗 [whisper-large-v3](https://huggingface.co/spaces/hf-audio/whisper-large-v3), Limited the video length to 60 seconds. Currently only supports google Translator, Use other [translators](https://github.com/DUQIA/Short-Video-To-Video/blob/main/README.md#use-other-translators). Please check [here](https://github.com/DUQIA/Short-Video-To-Video) for details."
   )
 demo.launch()

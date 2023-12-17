@@ -53,7 +53,7 @@ def time_verify():
       r_time = float(min(time_lists)) / (float(max(time_lists)) - j_time)
   else:
       r_time = float(max(time_lists)) / float(min(time_lists))
-  return r_time
+  return j_time, r_time
 
 def translator(text, TR_LANGUAGE, LANGUAGE):
   ts_text = ts.translate_text(text, translator=TR_LANGUAGE, from_language='auto', to_language=language[LANGUAGE])
@@ -179,13 +179,13 @@ with gr.Blocks() as demo:
   gr.Interface(
       fn=video_inputs,
       inputs=[
-          gr.Video(height=320, width=600, interactive=True, label='Input_video'),
+          gr.Video(height=320, interactive=True, label='Input_video'),
           TR_LANGUAGE,
           LANGUAGE,
           SPEAKER,
           ],
       outputs=[
-          gr.Video(height=320, width=600, label='Output_video'),
+          gr.Video(height=320, label='Output_video'),
           gr.Audio(label='Accompaniment'),
           gr.Audio(label='Vocals'),
           gr.Audio(label='Vocals_justified'),

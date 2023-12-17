@@ -23,6 +23,7 @@
 **⚠️Attention**
 - Currently, only one person’s voice is supported!
 -  The currently referenced space is up to one hour. [![huggingface](https://img.shields.io/badge/%F0%9F%A4%97-Open%20in%20Spacce-grue)](https://huggingface.co/spaces/hf-audio/whisper-large-v3)
+-  If the original video is DTS, then the Vocals audio on the page can only be used as a reference!
 -  Currently, only Google translator is supported. If you need other `Translator`, first select the `Translator` and submit. You will get `Language has been reloaded, please select again!` Then, select the `Language`. Click [here](#use-other-translators) for details.
 
 **⭕The two slowest steps in the current process:**

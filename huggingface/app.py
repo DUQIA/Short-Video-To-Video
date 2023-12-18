@@ -34,9 +34,13 @@ def gain_time(audio):
   return float(result.stdout)
 
 def left_justified(audio):
-  command = ['ffmpeg', '-i', audio, '-af', 'silencedetect=n=-38dB:d=0.01', '-f', 'null', '-']
-  result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-  return re.search(r'silence_duration: (\d.\d+)', result.stdout.decode(), re.M|re.S).group(1)
+  try:
+    command = ['ffmpeg', '-i', audio, '-af', 'silencedetect=n=-38dB:d=0.01', '-f', 'null', '-']
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    start_justified = re.search(r'silence_duration: (\d.\d+)', result.stdout.decode(), re.M|re.S).group(1)
+  except AttributeError:
+    raise gr.Error('No start sound detected!')
+  return start_justified
   
 def time_verify():
   audios = [vocals_monorail, text_to_speech]
@@ -110,12 +114,14 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
           'transcribe',	# str in 'Task' Radio component
           api_name='/predict'
     )
+
+    ts_text = translator(result, TR_LANGUAGE, LANGUAGE)
   except ffmpy.FFRuntimeError:
    raise gr.Error('Mismatched audio!')
-  except client.RemoteDisconnected as e:
-    raise gr.Error(e)
-
-  ts_text = translator(result, TR_LANGUAGE, LANGUAGE)
+  except RemoteDisconnected as e:
+    raise gr.Error(f'API:{e}')
+  except ConnectionError as i:
+    raise gr.Error(f'translator ConnectionError:{i}')
 
   async def amain():
     communicate = edge_tts.Communicate(ts_text, SPEAKER)

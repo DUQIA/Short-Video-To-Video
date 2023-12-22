@@ -6,6 +6,7 @@ import subprocess
 import gradio as gr
 import translators as ts
 from gradio_client import Client
+from http.client import RemoteDisconnected
 from list_dict import translates, speakers
 
 translate = translates
@@ -15,6 +16,7 @@ la = list(language.keys())[0]
 speaker = speakers
 sp = speaker[0]
 
+max_duration = 60
 file_name = 'audio'
 main_video = 'video.mp4'
 main_audio = f'{file_name}.wav'
@@ -60,12 +62,18 @@ def time_verify():
   return j_time, r_time
 
 def translator(text, TR_LANGUAGE, LANGUAGE):
-  ts_text = ts.translate_text(text, translator=TR_LANGUAGE, from_language='auto', to_language=language[LANGUAGE])
+  try:
+    ts_text = ts.translate_text(text, translator=TR_LANGUAGE, from_language='auto', to_language=language[LANGUAGE])
+  except ConnectionError as i:
+    raise gr.Error(f'translator ConnectionError:{i}')
+  except ts.TranslatorError:
+    raise gr.Error('Translator error!')
   return ts_text
 
 def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
   gl = True
   language = translate[TR_LANGUAGE]
+  get_time = float(gain_time(video))
 
   if video is None:
       raise gr.Error('No audio file submitted!')
@@ -81,13 +89,13 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
       if gl is True:
           gl = False
           raise gr.Error('Language has been reloaded, please select again!')
-  elif float(gain_time(video)) > 60:
+  elif get_time > max_duration:
       raise gr.Error('Exceed maximum limit!')
 
   try:
     ff = ffmpy.FFmpeg(
         inputs={
-            video: None
+            video: f'-t {max_duration}'
             },
         outputs={
             main_video: ['-y', '-map', '0:0', '-c:a', 'copy', '-f', 'mp4'],
@@ -120,8 +128,6 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
    raise gr.Error('Mismatched audio!')
   except RemoteDisconnected as e:
     raise gr.Error(f'API:{e}')
-  except ConnectionError as i:
-    raise gr.Error(f'translator ConnectionError:{i}')
 
   async def amain():
     communicate = edge_tts.Communicate(ts_text, SPEAKER)

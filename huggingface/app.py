@@ -1,13 +1,19 @@
 import re
+import os
 import ffmpy
 import asyncio
+import tarfile
 import edge_tts
 import subprocess
 import gradio as gr
 import translators as ts
 from gradio_client import Client
-from http.client import RemoteDisconnected
+from requests.exceptions import ConnectionError
 from list_dict import translates, speakers
+
+if not os.path.exists('pretrained_models'):
+    with tarfile.open('2stems.tar.gz', 'r:gz') as tar_ref:
+        tar_ref.extractall('./pretrained_models/2stems')
 
 translate = translates
 tr = list(translate.keys())[9]
@@ -44,8 +50,8 @@ def left_justified(audio):
     raise gr.Error('No start sound detected!')
   return start_justified
   
-def time_verify():
-  audios = [vocals_monorail, text_to_speech]
+def time_verify(vocals_audio, target_audio):
+  audios = [vocals_audio, target_audio]
   justified = []
   time_lists = []
 
@@ -59,7 +65,7 @@ def time_verify():
       r_time = float(min(time_lists)) / (float(max(time_lists)) - j_time)
   else:
       r_time = float(max(time_lists)) / float(min(time_lists))
-  return j_time, r_time
+  return round(j_time, 6), round(r_time, 6)
 
 def translator(text, TR_LANGUAGE, LANGUAGE):
   try:
@@ -126,7 +132,7 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
     ts_text = translator(result, TR_LANGUAGE, LANGUAGE)
   except ffmpy.FFRuntimeError:
    raise gr.Error('Mismatched audio!')
-  except RemoteDisconnected as e:
+  except ConnectionError as e:
     raise gr.Error(f'API:{e}')
 
   async def amain():
@@ -134,23 +140,24 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
     await communicate.save(text_to_speech)
   asyncio.run(amain())
 
-  j_time, r_time = time_verify()
+  r_time = time_verify(vocals_monorail, text_to_speech)
   ff = ffmpy.FFmpeg(
       inputs={
           text_to_speech: None
       },
       outputs={
-          output_rate_audio: ['-y', '-filter:a', f'atempo={r_time}']
+          output_rate_audio: ['-y', '-filter:a', f'atempo={r_time[1]}']
       }
   )
   ff.run()
-  if j_time > 0:
+  j_time = time_verify(vocals_monorail, output_rate_audio)
+  if j_time[0] > 0:
       ff = ffmpy.FFmpeg(
           inputs={
               output_rate_audio: None
           },
           outputs={
-              output_left_audio: ['-y', '-af', f'areverse,apad=pad_dur={j_time}s,areverse']
+              output_left_audio: ['-y', '-af', f'areverse,apad=pad_dur={j_time[0]}s,areverse']
           }
       )
       ff.run()
@@ -160,7 +167,7 @@ def video_inputs(video, TR_LANGUAGE, LANGUAGE, SPEAKER):
               output_rate_audio: None
           },
           outputs={
-              output_left_audio: ['-y',  '-filter:a', f'atrim=start={abs(j_time)}']
+              output_left_audio: ['-y',  '-filter:a', f'atrim=start={abs(j_time[0])}']
           }
       )
       ff.run()
